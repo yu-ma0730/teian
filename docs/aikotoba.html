@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>合言葉ジェネレーター</title>
+<title>パスワード・合言葉ジェネレーター</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Hiragino Kaku Gothic Pro', Meiryo, sans-serif; background: #f5f7fa; color: #333; min-height: 100vh; }
@@ -37,14 +37,105 @@
   .strength.strong { background: #dcfce7; color: #166534; }
   .tip { font-size: 0.78rem; color: #6b7280; background: #f9fafb; border-left: 3px solid #7c3aed; padding: 8px 12px; border-radius: 4px; margin-top: 12px; line-height: 1.6; }
   .empty { font-size: 0.85rem; color: #9ca3af; }
+  .tabs { display: flex; gap: 6px; margin-bottom: 16px; }
+  .tab { flex: 1; padding: 10px; border-radius: 8px; border: 1px solid #d1d5db; background: #fff; color: #374151; font-size: 0.9rem; font-family: inherit; cursor: pointer; }
+  .tab.active { background: #7c3aed; border-color: #7c3aed; color: #fff; font-weight: bold; }
+  input[type=text], input[type=url] { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.9rem; font-family: inherit; }
+  .row { display: flex; gap: 8px; align-items: center; margin-top: 8px; flex-wrap: wrap; }
+  .row select { flex: 1; min-width: 0; }
+  .range-row { display: flex; gap: 12px; align-items: center; }
+  .range-row input[type=range] { flex: 1; accent-color: #7c3aed; }
+  .range-row input[type=number] { width: 80px; }
+  .symbols { margin: 6px 0 0 26px; width: calc(100% - 26px) !important; font-family: monospace !important; }
+  .pw { font-family: Consolas, 'Courier New', monospace; font-size: 1.05rem; font-weight: bold; color: #1f2937; word-break: break-all; }
+  .actions { display: flex; flex-direction: column; gap: 6px; }
+  .error { font-size: 0.85rem; color: #991b1b; background: #fee2e2; padding: 8px 12px; border-radius: 6px; }
+  .saved-item { display: flex; gap: 8px; align-items: center; border-bottom: 1px solid #f3f4f6; padding: 8px 0; font-size: 0.85rem; }
+  .saved-item .text { flex: 1; min-width: 0; word-break: break-all; }
+  .muted { color: #6b7280; font-size: 0.78rem; }
+  ol.steps { font-size: 0.8rem; color: #555; margin: 10px 0 0 20px; line-height: 1.8; }
+  .btn-outline { background: #fff; color: #7c3aed; border: 1px solid #7c3aed; }
+  .btn-outline:hover { background: #f5f3ff; }
+  .btn-full { width: 100%; margin-top: 12px; }
 </style>
 </head>
 <body>
 <div class="container">
   <a class="back" href="index.html">← ツール集に戻る</a>
-  <h1>🔐 合言葉ジェネレーター</h1>
-  <p class="subtitle">覚えやすく推測されにくい合言葉を作成します。生成はブラウザ内だけで行われ、どこにも送信されません。</p>
+  <h1>🔐 パスワード・合言葉ジェネレーター</h1>
+  <p class="subtitle">条件を選んで安全なパスワードや覚えやすい合言葉を作成します。生成はブラウザ内だけで行われ、どこにも送信されません。</p>
 
+  <div class="tabs">
+    <button class="tab active" data-tab="pw">🔑 パスワード</button>
+    <button class="tab" data-tab="words">💬 合言葉（単語）</button>
+  </div>
+
+  <div id="tab-pw">
+  <div class="card">
+    <h2>📐 ルール</h2>
+    <label class="field" for="rule">ルールを選ぶ</label>
+    <select id="rule"></select>
+    <div class="row">
+      <button class="btn btn-secondary" id="saveRule">＋ 今の条件をルールとして保存</button>
+      <button class="btn btn-secondary" id="deleteRule" style="display:none">このルールを削除</button>
+    </div>
+
+    <label class="field" for="pwLen">文字数</label>
+    <div class="range-row">
+      <input type="range" id="pwLenRange" min="4" max="64" value="16">
+      <input type="number" id="pwLen" min="4" max="64" value="16">
+    </div>
+
+    <label class="field">使う文字</label>
+    <label class="check"><input type="checkbox" id="useUpper" checked> 英大文字（A-Z）</label>
+    <label class="check"><input type="checkbox" id="useLower" checked> 英小文字（a-z）</label>
+    <label class="check"><input type="checkbox" id="useDigit" checked> 数字（0-9）</label>
+    <label class="check"><input type="checkbox" id="useSymbol" checked> 記号</label>
+    <input type="text" id="symbols" class="symbols" value="!@#$%&*-_=+?" aria-label="使う記号">
+
+    <label class="field">その他の条件</label>
+    <label class="check"><input type="checkbox" id="requireEach" checked> 選んだ種類の文字を必ず1文字以上含める</label>
+    <label class="check"><input type="checkbox" id="noAmbiguous"> 見間違えやすい文字を除く（0 O o 1 l I |）</label>
+    <label class="check"><input type="checkbox" id="firstAlpha"> 先頭を英字にする</label>
+    <label class="check"><input type="checkbox" id="noRepeat"> 同じ文字を連続させない</label>
+
+    <label class="field" for="pwHowmany">生成する数</label>
+    <input type="number" id="pwHowmany" min="1" max="20" value="5">
+
+    <button class="btn btn-primary" id="pwGen">パスワードを生成</button>
+  </div>
+
+  <div class="card">
+    <h2>📋 結果</h2>
+    <div id="pwResults"><p class="empty">「パスワードを生成」を押してください。</p></div>
+    <div id="pwStrength" class="strength" style="display:none"></div>
+  </div>
+
+  <div class="card">
+    <h2>💾 Googleパスワードマネージャーに保存</h2>
+    <p class="muted">サイト情報を入力してから、結果の「保存リストへ」を押してください。リストをCSVで書き出し、Googleパスワードマネージャーに取り込めます。</p>
+    <label class="field" for="siteName">サイト名</label>
+    <input type="text" id="siteName" placeholder="例：Amazon">
+    <label class="field" for="siteUrl">サイトのURL（必須）</label>
+    <input type="url" id="siteUrl" placeholder="例：https://www.amazon.co.jp">
+    <label class="field" for="siteUser">ユーザー名・メールアドレス</label>
+    <input type="text" id="siteUser" placeholder="例：taro@example.com" autocomplete="off">
+    <div id="saveError" class="error" style="display:none; margin-top:10px"></div>
+
+    <div id="savedList" style="margin-top:14px"><p class="empty">保存リストは空です。</p></div>
+    <button class="btn btn-outline btn-full" id="downloadCsv">CSVをダウンロード</button>
+    <ol class="steps">
+      <li>「CSVをダウンロード」でファイルを保存</li>
+      <li><a href="https://passwords.google.com/options" target="_blank" rel="noopener">passwords.google.com の設定</a>を開く</li>
+      <li>「パスワードをインポート」→ ダウンロードしたCSVを選択</li>
+      <li><b>取り込んだらCSVファイルは必ず削除</b>（パスワードが暗号化されずに書かれています）</li>
+    </ol>
+    <div class="tip">保存リストはこのページを閉じると消えます（ブラウザにも残しません）。<br>
+      別の方法として、パスワードをコピーして登録先サイトの入力欄に貼り付けると、Chromeが「パスワードを保存しますか？」と聞いてくるので、そこで保存することもできます。</div>
+  </div>
+  </div>
+
+  <div id="tab-words" style="display:none">
   <div class="card">
     <h2>⚙️ 設定</h2>
     <label class="field" for="mode">形式</label>
@@ -95,6 +186,7 @@
       単語は <span id="wordTotal"></span> 語の辞書から暗号論的乱数（crypto.getRandomValues）で均等に選ばれます。<br>
       ログインなどのパスワード用途では5語以上（より安全にするなら6語以上）を推奨します。問答形式は対面・電話での本人確認など、口頭でのやり取り向けです。
     </div>
+  </div>
   </div>
 </div>
 
@@ -227,6 +319,251 @@ function generate() {
 }
 
 $('gen').addEventListener('click', generate);
+
+// ---------- タブ ----------
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach(x => x.classList.toggle('active', x === t));
+  $('tab-pw').style.display = t.dataset.tab === 'pw' ? '' : 'none';
+  $('tab-words').style.display = t.dataset.tab === 'words' ? '' : 'none';
+}));
+
+// ---------- パスワード ----------
+const CHARSETS = {
+  upper: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+  lower: 'abcdefghijklmnopqrstuvwxyz',
+  digit: '0123456789'
+};
+const AMBIGUOUS = '0Oo1lI|';
+const RULE_FIELDS = ['length', 'upper', 'lower', 'digit', 'symbol', 'symbols', 'requireEach', 'noAmbiguous', 'firstAlpha', 'noRepeat'];
+
+const PRESETS = [
+  { name: '標準（16文字・英数字＋記号）', length: 16, upper: true, lower: true, digit: true, symbol: true, symbols: '!@#$%&*-_=+?', requireEach: true, noAmbiguous: false, firstAlpha: false, noRepeat: false },
+  { name: '英数字のみ（12文字）', length: 12, upper: true, lower: true, digit: true, symbol: false, symbols: '!@#$%&*-_=+?', requireEach: true, noAmbiguous: false, firstAlpha: false, noRepeat: false },
+  { name: '英数字のみ・見間違えにくい（12文字）', length: 12, upper: true, lower: true, digit: true, symbol: false, symbols: '!@#$%&*-_=+?', requireEach: true, noAmbiguous: true, firstAlpha: true, noRepeat: true },
+  { name: '強力（24文字・英数字＋記号）', length: 24, upper: true, lower: true, digit: true, symbol: true, symbols: '!@#$%^&*()-_=+[]{};:,.<>?/~', requireEach: true, noAmbiguous: false, firstAlpha: false, noRepeat: false },
+  { name: '英小文字＋数字（10文字）', length: 10, upper: false, lower: true, digit: true, symbol: false, symbols: '!@#$%&*-_=+?', requireEach: true, noAmbiguous: false, firstAlpha: true, noRepeat: false },
+  { name: '数字のみ（暗証番号 6桁）', length: 6, upper: false, lower: false, digit: true, symbol: false, symbols: '!@#$%&*-_=+?', requireEach: false, noAmbiguous: false, firstAlpha: false, noRepeat: true }
+];
+const RULES_KEY = 'aikotoba.pwRules';
+
+function loadCustomRules() {
+  try { return JSON.parse(localStorage.getItem(RULES_KEY)) || []; } catch (e) { return []; }
+}
+function saveCustomRules(rules) {
+  try { localStorage.setItem(RULES_KEY, JSON.stringify(rules)); return true; } catch (e) { return false; }
+}
+
+function readRule() {
+  return {
+    length: clamp($('pwLen').value, 4, 64, 16),
+    upper: $('useUpper').checked, lower: $('useLower').checked,
+    digit: $('useDigit').checked, symbol: $('useSymbol').checked,
+    symbols: $('symbols').value,
+    requireEach: $('requireEach').checked, noAmbiguous: $('noAmbiguous').checked,
+    firstAlpha: $('firstAlpha').checked, noRepeat: $('noRepeat').checked
+  };
+}
+function applyRule(r) {
+  $('pwLen').value = $('pwLenRange').value = r.length;
+  $('useUpper').checked = r.upper; $('useLower').checked = r.lower;
+  $('useDigit').checked = r.digit; $('useSymbol').checked = r.symbol;
+  $('symbols').value = r.symbols;
+  $('requireEach').checked = r.requireEach; $('noAmbiguous').checked = r.noAmbiguous;
+  $('firstAlpha').checked = r.firstAlpha; $('noRepeat').checked = r.noRepeat;
+  $('symbols').disabled = !r.symbol;
+}
+
+function renderRuleSelect(selected) {
+  const sel = $('rule');
+  sel.replaceChildren();
+  const add = (parent, value, text) => { const o = el('option', null, text); o.value = value; parent.append(o); };
+  add(sel, 'manual', '— 手動設定 —');
+  const g1 = document.createElement('optgroup'); g1.label = 'おすすめ';
+  PRESETS.forEach((r, i) => add(g1, 'p' + i, r.name));
+  sel.append(g1);
+  const custom = loadCustomRules();
+  if (custom.length) {
+    const g2 = document.createElement('optgroup'); g2.label = 'マイルール';
+    custom.forEach((r, i) => add(g2, 'c' + i, r.name));
+    sel.append(g2);
+  }
+  sel.value = selected;
+  $('deleteRule').style.display = selected.startsWith('c') ? '' : 'none';
+}
+
+$('rule').addEventListener('change', () => {
+  const v = $('rule').value;
+  if (v.startsWith('p')) applyRule(PRESETS[+v.slice(1)]);
+  if (v.startsWith('c')) applyRule(loadCustomRules()[+v.slice(1)]);
+  $('deleteRule').style.display = v.startsWith('c') ? '' : 'none';
+});
+
+// 条件を手で変えたら「手動設定」に切り替える
+['pwLen', 'pwLenRange', 'useUpper', 'useLower', 'useDigit', 'useSymbol', 'symbols', 'requireEach', 'noAmbiguous', 'firstAlpha', 'noRepeat']
+  .forEach(id => $(id).addEventListener('input', () => {
+    if (id === 'pwLenRange') $('pwLen').value = $('pwLenRange').value;
+    if (id === 'pwLen') $('pwLenRange').value = $('pwLen').value;
+    if (id === 'useSymbol') $('symbols').disabled = !$('useSymbol').checked;
+    $('rule').value = 'manual';
+    $('deleteRule').style.display = 'none';
+  }));
+
+$('saveRule').addEventListener('click', () => {
+  const name = prompt('ルールの名前を入力してください（例：会社のシステム用）');
+  if (!name || !name.trim()) return;
+  const rules = loadCustomRules();
+  rules.push(Object.assign({ name: name.trim() }, readRule()));
+  if (!saveCustomRules(rules)) { alert('このブラウザではルールを保存できませんでした。'); return; }
+  renderRuleSelect('c' + (rules.length - 1));
+});
+
+$('deleteRule').addEventListener('click', () => {
+  const v = $('rule').value;
+  if (!v.startsWith('c')) return;
+  const rules = loadCustomRules();
+  const i = +v.slice(1);
+  if (!confirm(`ルール「${rules[i].name}」を削除しますか？`)) return;
+  rules.splice(i, 1);
+  saveCustomRules(rules);
+  renderRuleSelect('manual');
+});
+
+// ルールから文字グループを作る。問題があればエラーメッセージを返す
+function buildGroups(r) {
+  const strip = s => r.noAmbiguous ? [...s].filter(c => !AMBIGUOUS.includes(c)).join('') : s;
+  const groups = [];
+  if (r.upper) groups.push(strip(CHARSETS.upper));
+  if (r.lower) groups.push(strip(CHARSETS.lower));
+  if (r.digit) groups.push(strip(CHARSETS.digit));
+  if (r.symbol) {
+    const sym = strip([...new Set(r.symbols.replace(/[\sA-Za-z0-9]/g, ''))].join(''));
+    if (!sym) return { error: '「記号」がオンですが、使う記号が入力されていません。' };
+    groups.push(sym);
+  }
+  if (!groups.length) return { error: '使う文字の種類を1つ以上選んでください。' };
+  if (r.requireEach && r.length < groups.length) return { error: `選んだ${groups.length}種類をすべて含めるには、${groups.length}文字以上にしてください。` };
+  if (r.firstAlpha && !r.upper && !r.lower) return { error: '「先頭を英字にする」には英大文字か英小文字を選んでください。' };
+  return { groups, pool: groups.join('') };
+}
+
+// 全体から均等に選び、条件を満たさなければ作り直す（棄却サンプリング）
+function makePassword(r, g) {
+  for (let attempt = 0; attempt < 10000; attempt++) {
+    const chars = Array.from({ length: r.length }, () => g.pool[randInt(g.pool.length)]);
+    if (r.requireEach && !g.groups.every(set => chars.some(c => set.includes(c)))) continue;
+    if (r.firstAlpha && !/[A-Za-z]/.test(chars[0])) continue;
+    if (r.noRepeat && chars.some((c, i) => i > 0 && c === chars[i - 1])) continue;
+    return chars.join('');
+  }
+  return null;
+}
+
+function generatePasswords() {
+  const r = readRule();
+  $('pwLen').value = $('pwLenRange').value = r.length;
+  const howmany = clamp($('pwHowmany').value, 1, 20, 5);
+  $('pwHowmany').value = howmany;
+  const box = $('pwResults');
+  const s = $('pwStrength');
+  box.replaceChildren();
+  s.style.display = 'none';
+
+  const g = buildGroups(r);
+  if (g.error) { box.append(el('div', 'error', g.error)); return; }
+
+  for (let i = 0; i < howmany; i++) {
+    const pw = makePassword(r, g);
+    if (!pw) { box.replaceChildren(el('div', 'error', '条件が厳しすぎて作れませんでした。文字数や条件を見直してください。')); return; }
+    const row = el('div', 'result');
+    const text = el('div', 'text');
+    text.append(el('div', 'pw', pw));
+    const actions = el('div', 'actions');
+    const addBtn = el('button', 'btn btn-secondary', '保存リストへ');
+    addBtn.addEventListener('click', () => addToSaved(pw, addBtn));
+    actions.append(copyButton(pw), addBtn);
+    row.append(text, actions);
+    box.append(row);
+  }
+
+  const bits = r.length * Math.log2(g.pool.length);
+  let level, label;
+  if (bits < 50) { level = 'weak'; label = '弱い（文字数を増やすか、文字の種類を増やしてください）'; }
+  else if (bits < 75) { level = 'ok'; label = '普通'; }
+  else { level = 'strong'; label = '強い'; }
+  s.className = 'strength ' + level;
+  s.textContent = `推測の難しさ：約 ${Math.round(bits)} ビット（${g.pool.length}種類の文字 × ${r.length}文字） — ${label}`;
+  s.style.display = 'block';
+}
+$('pwGen').addEventListener('click', generatePasswords);
+
+// ---------- 保存リスト・CSV書き出し ----------
+const saved = [];
+
+function normalizeUrl(u) {
+  u = u.trim();
+  if (!u) return '';
+  if (!/^https?:\/\//i.test(u)) u = 'https://' + u;
+  try { return new URL(u).origin; } catch (e) { return ''; }
+}
+
+function addToSaved(pw, btn) {
+  const err = $('saveError');
+  const url = normalizeUrl($('siteUrl').value);
+  if (!url) {
+    err.textContent = '先に「サイトのURL」を入力してください（例：https://www.amazon.co.jp）。';
+    err.style.display = 'block';
+    $('siteUrl').focus();
+    return;
+  }
+  err.style.display = 'none';
+  const name = $('siteName').value.trim() || new URL(url).hostname;
+  saved.push({ name, url, username: $('siteUser').value.trim(), password: pw });
+  renderSaved();
+  btn.textContent = '✓ 追加済み';
+  setTimeout(() => { btn.textContent = '保存リストへ'; }, 1500);
+}
+
+function renderSaved() {
+  const box = $('savedList');
+  box.replaceChildren();
+  if (!saved.length) { box.append(el('p', 'empty', '保存リストは空です。')); return; }
+  saved.forEach((item, i) => {
+    const row = el('div', 'saved-item');
+    const text = el('div', 'text');
+    text.append(el('div', null, `${item.name}${item.username ? '（' + item.username + '）' : ''}`),
+                el('div', 'muted', `${item.url} ・ ${item.password.slice(0, 3)}${'•'.repeat(Math.max(0, item.password.length - 3))}`));
+    const del = el('button', 'btn btn-secondary', '削除');
+    del.addEventListener('click', () => { saved.splice(i, 1); renderSaved(); });
+    row.append(text, del);
+    box.append(row);
+  });
+}
+
+function csvCell(v) {
+  return /[",\r\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v;
+}
+
+$('downloadCsv').addEventListener('click', () => {
+  if (!saved.length) {
+    $('saveError').textContent = '保存リストが空です。結果の「保存リストへ」で追加してください。';
+    $('saveError').style.display = 'block';
+    return;
+  }
+  // Googleパスワードマネージャーのインポート形式
+  const lines = ['name,url,username,password,note']
+    .concat(saved.map(s => [s.name, s.url, s.username, s.password, ''].map(csvCell).join(',')));
+  const blob = new Blob([lines.join('\r\n') + '\r\n'], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'passwords.csv';
+  document.body.append(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+});
+
+renderRuleSelect('p0');
+applyRule(PRESETS[0]);
 </script>
 </body>
 </html>
