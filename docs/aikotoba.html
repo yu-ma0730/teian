@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>合言葉ジェネレーター</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Hiragino Kaku Gothic Pro', Meiryo, sans-serif; background: #f5f7fa; color: #333; min-height: 100vh; }
+  .container { max-width: 640px; margin: 0 auto; padding: 20px 16px; }
+  .back { display: inline-block; font-size: 0.8rem; color: #6b7280; text-decoration: none; margin-bottom: 12px; }
+  .back:hover { color: #374151; }
+  h1 { font-size: 1.5rem; color: #7c3aed; margin-bottom: 6px; }
+  .subtitle { font-size: 0.85rem; color: #666; margin-bottom: 24px; }
+  .card { background: #fff; border-radius: 12px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  .card h2 { font-size: 1rem; color: #374151; margin-bottom: 16px; }
+  label.field { display: block; font-size: 0.85rem; color: #555; margin: 14px 0 6px; }
+  label.field:first-of-type { margin-top: 0; }
+  select, input[type=number] { width: 100%; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; font-size: 0.9rem; font-family: inherit; background: #fff; }
+  select:focus, input:focus { outline: none; border-color: #7c3aed; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+  .check { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #555; margin-top: 12px; cursor: pointer; }
+  .btn { display: inline-block; padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.9rem; font-family: inherit; transition: background .2s; }
+  .btn-primary { background: #7c3aed; color: #fff; width: 100%; padding: 14px; font-size: 1rem; margin-top: 20px; }
+  .btn-primary:hover { background: #6d28d9; }
+  .btn-secondary { background: #f3f4f6; color: #374151; font-size: 0.78rem; padding: 6px 12px; }
+  .btn-secondary:hover { background: #e5e7eb; }
+  .result { border: 1px solid #e5e7eb; border-radius: 8px; padding: 14px; margin-top: 10px; display: flex; align-items: center; gap: 10px; }
+  .result .text { flex: 1; min-width: 0; }
+  .phrase { font-size: 1.15rem; font-weight: bold; color: #1f2937; word-break: break-all; }
+  .reading { font-size: 0.78rem; color: #6b7280; margin-top: 4px; word-break: break-all; }
+  .pair-label { font-size: 0.72rem; color: #7c3aed; font-weight: bold; }
+  .reading + .pair-label { margin-top: 10px; }
+  .strength { font-size: 0.8rem; margin-top: 12px; padding: 8px 12px; border-radius: 6px; }
+  .strength.weak { background: #fee2e2; color: #991b1b; }
+  .strength.ok { background: #fef9c3; color: #92400e; }
+  .strength.strong { background: #dcfce7; color: #166534; }
+  .tip { font-size: 0.78rem; color: #6b7280; background: #f9fafb; border-left: 3px solid #7c3aed; padding: 8px 12px; border-radius: 4px; margin-top: 12px; line-height: 1.6; }
+  .empty { font-size: 0.85rem; color: #9ca3af; }
+</style>
+</head>
+<body>
+<div class="container">
+  <a class="back" href="index.html">← ツール集に戻る</a>
+  <h1>🔐 合言葉ジェネレーター</h1>
+  <p class="subtitle">覚えやすく推測されにくい合言葉を作成します。生成はブラウザ内だけで行われ、どこにも送信されません。</p>
+
+  <div class="card">
+    <h2>⚙️ 設定</h2>
+    <label class="field" for="mode">形式</label>
+    <select id="mode">
+      <option value="phrase">パスフレーズ（単語をつなげる）</option>
+      <option value="pair">問答形式（「山」と言われたら「川」）</option>
+    </select>
+
+    <div class="grid">
+      <div>
+        <label class="field" for="count">単語数</label>
+        <input type="number" id="count" min="1" max="10" value="5">
+      </div>
+      <div>
+        <label class="field" for="script">表記</label>
+        <select id="script">
+          <option value="kana">ひらがな</option>
+          <option value="romaji">ローマ字</option>
+        </select>
+      </div>
+      <div>
+        <label class="field" for="sep">区切り文字</label>
+        <select id="sep">
+          <option value="-">ハイフン（-）</option>
+          <option value="_">アンダースコア（_）</option>
+          <option value=".">ドット（.）</option>
+          <option value=" ">スペース</option>
+          <option value="">なし</option>
+        </select>
+      </div>
+      <div>
+        <label class="field" for="howmany">生成する数</label>
+        <input type="number" id="howmany" min="1" max="20" value="5">
+      </div>
+    </div>
+
+    <label class="check"><input type="checkbox" id="addNum"> 末尾に数字2桁を付ける</label>
+    <label class="check"><input type="checkbox" id="capital"> 各単語の頭文字を大文字にする（ローマ字のみ）</label>
+
+    <button class="btn btn-primary" id="gen">合言葉を生成</button>
+  </div>
+
+  <div class="card">
+    <h2>📋 結果</h2>
+    <div id="results"><p class="empty">「合言葉を生成」を押してください。</p></div>
+    <div id="strength" class="strength" style="display:none"></div>
+    <div class="tip">
+      単語は <span id="wordTotal"></span> 語の辞書から暗号論的乱数（crypto.getRandomValues）で均等に選ばれます。<br>
+      ログインなどのパスワード用途では5語以上（より安全にするなら6語以上）を推奨します。問答形式は対面・電話での本人確認など、口頭でのやり取り向けです。
+    </div>
+  </div>
+</div>
+
+<script>
+// ひらがな:ローマ字
+const WORDS = `
+あさ:asa ひる:hiru よる:yoru はる:haru なつ:natsu あき:aki ふゆ:fuyu やま:yama
+かわ:kawa うみ:umi そら:sora くも:kumo あめ:ame ゆき:yuki かぜ:kaze にじ:niji
+ほし:hoshi つき:tsuki ひかり:hikari かげ:kage もり:mori はやし:hayashi いけ:ike しま:shima
+いわ:iwa すな:suna たき:taki のはら:nohara おか:oka みなと:minato はし:hashi みち:michi
+さくら:sakura うめ:ume もみじ:momiji まつ:matsu たけ:take すぎ:sugi きく:kiku ばら:bara
+ゆり:yuri はす:hasu すみれ:sumire つばき:tsubaki あじさい:ajisai ひまわり:himawari たんぽぽ:tanpopo こけ:koke
+いぬ:inu ねこ:neko うさぎ:usagi きつね:kitsune たぬき:tanuki くま:kuma しか:shika さる:saru
+うま:uma うし:ushi ひつじ:hitsuji ぶた:buta とら:tora りす:risu ねずみ:nezumi かめ:kame
+へび:hebi かえる:kaeru とんぼ:tonbo ちょう:chou はち:hachi あり:ari ほたる:hotaru せみ:semi
+からす:karasu すずめ:suzume つる:tsuru はと:hato たか:taka ふくろう:fukurou かも:kamo つばめ:tsubame
+さかな:sakana くじら:kujira いるか:iruka たこ:tako いか:ika かに:kani えび:ebi くらげ:kurage
+りんご:ringo みかん:mikan ぶどう:budou もも:momo なし:nashi かき:kaki いちご:ichigo すいか:suika
+めろん:meron ばなな:banana れもん:remon くり:kuri まめ:mame こめ:kome むぎ:mugi いも:imo
+だいこん:daikon にんじん:ninjin かぼちゃ:kabocha ねぎ:negi なす:nasu とまと:tomato きのこ:kinoko のり:nori
+おにぎり:onigiri もち:mochi だんご:dango せんべい:senbei うどん:udon そば:soba すし:sushi てんぷら:tenpura
+みそ:miso しお:shio さとう:satou おちゃ:ocha ぱん:pan けーき:keeki あめだま:amedama ぷりん:purin
+つくえ:tsukue いす:isu まど:mado とびら:tobira かぎ:kagi かさ:kasa かばん:kaban くつ:kutsu
+ぼうし:boushi てぶくろ:tebukuro まくら:makura ふとん:futon たたみ:tatami しょうじ:shouji ちょうちん:chouchin かがみ:kagami
+とけい:tokei えんぴつ:enpitsu ふで:fude はさみ:hasami のーと:nooto ほん:hon てがみ:tegami きっぷ:kippu
+でんしゃ:densha ばす:basu ふね:fune ひこうき:hikouki じてんしゃ:jitensha くるま:kuruma ろけっと:roketto きかんしゃ:kikansha
+たいこ:taiko ふえ:fue すず:suzu こま:koma たこあげ:takoage けんだま:kendama おりがみ:origami にんぎょう:ningyou
+うた:uta おどり:odori まつり:matsuri はなび:hanabi ゆかた:yukata うちわ:uchiwa せんす:sensu ふうりん:fuurin
+しろ:shiro てら:tera じんじゃ:jinja とりい:torii とう:tou むら:mura まち:machi にわ:niwa
+いど:ido はたけ:hatake たんぼ:tanbo こや:koya えき:eki みせ:mise いちば:ichiba こうえん:kouen
+あか:aka あお:ao きいろ:kiiro みどり:midori むらさき:murasaki しろいろ:shiroiro くろ:kuro ぎん:gin
+きん:kin どう:dou てつ:tetsu ほうせき:houseki しんじゅ:shinju こはく:kohaku ひすい:hisui るり:ruri
+ほのお:honoo みず:mizu つち:tsuchi き:ki かみなり:kaminari きり:kiri しも:shimo こおり:koori
+なみ:nami しずく:shizuku あわ:awa けむり:kemuri ゆうひ:yuuhi あさひ:asahi よあけ:yoake たそがれ:tasogare
+ゆめ:yume こころ:kokoro ちから:chikara えがお:egao なかま:nakama たから:takara ちず:chizu たび:tabi
+ぼうけん:bouken ひみつ:himitsu なぞ:nazo まほう:mahou ゆうしゃ:yuusha にんじゃ:ninja さむらい:samurai とのさま:tonosama
+ほたて:hotate かいがら:kaigara どんぐり:donguri まつぼっくり:matsubokkuri ろうそく:rousoku はしご:hashigo つりざお:tsurizao ふうせん:fuusen
+おに:oni かっぱ:kappa てんぐ:tengu りゅう:ryuu ほうおう:houou こだま:kodama ようせい:yousei ろぼっと:robotto
+`.trim().split(/\s+/).map(w => { const [kana, romaji] = w.split(':'); return { kana, romaji }; });
+
+const $ = id => document.getElementById(id);
+$('wordTotal').textContent = WORDS.length;
+
+// 0..n-1 の一様乱数（剰余バイアスを避けるため棄却サンプリング）
+function randInt(n) {
+  const limit = Math.floor(0x100000000 / n) * n;
+  const buf = new Uint32Array(1);
+  do { crypto.getRandomValues(buf); } while (buf[0] >= limit);
+  return buf[0] % n;
+}
+
+function clamp(v, min, max, def) {
+  v = parseInt(v, 10);
+  return isNaN(v) ? def : Math.min(max, Math.max(min, v));
+}
+
+function pickWords(n) {
+  return Array.from({ length: n }, () => WORDS[randInt(WORDS.length)]);
+}
+
+function render(words, opts) {
+  const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
+  const main = words.map(w => opts.script === 'kana' ? w.kana : (opts.capital ? cap(w.romaji) : w.romaji));
+  const sub = words.map(w => opts.script === 'kana' ? w.romaji : w.kana);
+  const num = opts.addNum ? String(randInt(100)).padStart(2, '0') : '';
+  return {
+    phrase: main.join(opts.sep) + (num ? opts.sep + num : ''),
+    reading: sub.join(' ') + (num ? ' ' + num : '')
+  };
+}
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+
+function copyButton(text) {
+  const b = el('button', 'btn btn-secondary', 'コピー');
+  b.addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      b.textContent = '✓ コピー済み';
+    } catch (e) {
+      b.textContent = 'コピー失敗';
+    }
+    setTimeout(() => { b.textContent = 'コピー'; }, 1500);
+  });
+  return b;
+}
+
+function generate() {
+  const mode = $('mode').value;
+  const count = clamp($('count').value, 1, 10, 5);
+  const howmany = clamp($('howmany').value, 1, 20, 5);
+  $('count').value = count;
+  $('howmany').value = howmany;
+  const opts = { script: $('script').value, sep: $('sep').value, addNum: $('addNum').checked, capital: $('capital').checked };
+
+  const box = $('results');
+  box.replaceChildren();
+  for (let i = 0; i < howmany; i++) {
+    const row = el('div', 'result');
+    const text = el('div', 'text');
+    if (mode === 'pair') {
+      const q = render(pickWords(count), opts);
+      const a = render(pickWords(count), opts);
+      text.append(el('div', 'pair-label', '合図'), el('div', 'phrase', q.phrase), el('div', 'reading', q.reading),
+                  el('div', 'pair-label', '応答'), el('div', 'phrase', a.phrase), el('div', 'reading', a.reading));
+      row.append(text, copyButton(`合図: ${q.phrase}\n応答: ${a.phrase}`));
+    } else {
+      const r = render(pickWords(count), opts);
+      text.append(el('div', 'phrase', r.phrase), el('div', 'reading', r.reading));
+      row.append(text, copyButton(r.phrase));
+    }
+    box.append(row);
+  }
+
+  // 強度（エントロピー）表示：推測する側が知る必要のある部分＝パスフレーズ全体、問答なら応答のみ
+  const bits = count * Math.log2(WORDS.length) + (opts.addNum ? Math.log2(100) : 0);
+  const s = $('strength');
+  let level, label;
+  if (bits < 40) { level = 'weak'; label = '弱い（口頭の合図向け。パスワードには不向き）'; }
+  else if (bits < 60) { level = 'ok'; label = '普通'; }
+  else { level = 'strong'; label = '強い'; }
+  s.className = 'strength ' + level;
+  s.textContent = `推測の難しさ：約 ${Math.round(bits)} ビット — ${label}` + (mode === 'pair' ? '（応答部分）' : '');
+  s.style.display = 'block';
+}
+
+$('gen').addEventListener('click', generate);
+</script>
+</body>
+</html>
