@@ -1,0 +1,844 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AppForge — AIアプリビルダー</title>
+<style>
+  :root {
+    --bg: #f6f5fb; --panel: #fff; --border: #e5e3ef; --text: #1f1d2b; --muted: #6b6880;
+    --accent: #6d4aff; --accent2: #ff6a3d; --ok: #10b981; --err: #ef4444; --code-bg: #15131f;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body { font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, system-ui, sans-serif; background: var(--bg); color: var(--text); }
+  button { font: inherit; cursor: pointer; }
+  input, textarea, select { font: inherit; color: inherit; }
+  .hidden { display: none !important; }
+
+  /* ── Header ── */
+  header { height: 56px; display: flex; align-items: center; gap: 12px; padding: 0 16px; background: var(--panel); border-bottom: 1px solid var(--border); }
+  .logo { font-weight: 800; font-size: 1.15rem; display: flex; align-items: center; gap: 8px; cursor: pointer; user-select: none; }
+  .logo-mark { width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, var(--accent), var(--accent2)); display: grid; place-items: center; color: #fff; font-size: .9rem; }
+  .proj-title { font-weight: 600; color: var(--muted); border: 1px solid transparent; border-radius: 6px; padding: 4px 8px; background: none; min-width: 0; max-width: 260px; }
+  .proj-title:hover, .proj-title:focus { border-color: var(--border); outline: none; color: var(--text); }
+  .spacer { flex: 1; }
+  .btn { border: 1px solid var(--border); background: var(--panel); border-radius: 8px; padding: 7px 12px; font-size: .85rem; white-space: nowrap; }
+  .btn:hover { background: #f1effa; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn-primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn-primary:hover { background: #5a37ee; }
+  .btn-ghost { border-color: transparent; background: none; }
+
+  /* ── Home ── */
+  #home { min-height: calc(100vh - 56px); padding: 56px 16px 80px; }
+  .hero { max-width: 760px; margin: 0 auto; text-align: center; }
+  .hero h1 { font-size: clamp(1.8rem, 5vw, 2.8rem); line-height: 1.25; margin-bottom: 12px; }
+  .grad { background: linear-gradient(90deg, var(--accent), var(--accent2)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+  .hero p { color: var(--muted); margin-bottom: 28px; }
+  .prompt-box { background: var(--panel); border: 1px solid var(--border); border-radius: 16px; padding: 14px; box-shadow: 0 8px 30px rgba(80, 60, 160, .08); text-align: left; }
+  .prompt-box textarea { width: 100%; border: none; outline: none; resize: none; min-height: 96px; font-size: 1rem; background: none; }
+  .prompt-actions { display: flex; align-items: center; gap: 8px; }
+  .hint { font-size: .78rem; color: var(--muted); }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; margin-top: 18px; }
+  .chip { border: 1px solid var(--border); background: var(--panel); border-radius: 999px; padding: 6px 14px; font-size: .85rem; }
+  .chip:hover { border-color: var(--accent); color: var(--accent); }
+  .projects { max-width: 1000px; margin: 56px auto 0; }
+  .projects h2 { font-size: 1.05rem; margin-bottom: 14px; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; cursor: pointer; transition: box-shadow .15s; position: relative; }
+  .card:hover { box-shadow: 0 6px 20px rgba(80, 60, 160, .12); }
+  .thumb { height: 130px; background: #f0eef8; overflow: hidden; position: relative; }
+  .thumb iframe { width: 400%; height: 400%; transform: scale(.25); transform-origin: 0 0; border: 0; pointer-events: none; }
+  .card-body { padding: 10px 12px; }
+  .card-title { font-weight: 600; font-size: .92rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .card-meta { font-size: .75rem; color: var(--muted); margin-top: 2px; }
+  .card-del { position: absolute; top: 6px; right: 6px; background: rgba(255,255,255,.9); border: 1px solid var(--border); border-radius: 6px; font-size: .75rem; padding: 2px 7px; opacity: 0; }
+  .card:hover .card-del { opacity: 1; }
+  .empty { color: var(--muted); font-size: .9rem; }
+
+  /* ── Builder ── */
+  #builder { height: calc(100vh - 56px); display: grid; grid-template-columns: 380px 1fr; }
+  .chat { display: flex; flex-direction: column; border-right: 1px solid var(--border); background: var(--panel); min-height: 0; }
+  .msgs { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .msg { max-width: 92%; padding: 10px 12px; border-radius: 12px; font-size: .9rem; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+  .msg.user { align-self: flex-end; background: var(--accent); color: #fff; border-bottom-right-radius: 4px; }
+  .msg.ai { align-self: flex-start; background: #f3f1fa; border-bottom-left-radius: 4px; }
+  .msg.sys { align-self: center; background: none; color: var(--muted); font-size: .78rem; }
+  .msg.err { align-self: stretch; background: #fef2f2; color: #991b1b; border: 1px solid #fecaca; }
+  .msg .restore { display: inline-block; margin-top: 6px; font-size: .75rem; color: var(--accent); background: none; border: none; text-decoration: underline; }
+  .typing { display: inline-flex; gap: 4px; }
+  .typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--muted); animation: blink 1.2s infinite; }
+  .typing i:nth-child(2) { animation-delay: .2s; } .typing i:nth-child(3) { animation-delay: .4s; }
+  @keyframes blink { 0%, 80%, 100% { opacity: .2; } 40% { opacity: 1; } }
+  .composer { border-top: 1px solid var(--border); padding: 12px; }
+  .composer textarea { width: 100%; border: 1px solid var(--border); border-radius: 10px; padding: 10px; resize: none; height: 78px; outline: none; font-size: .9rem; }
+  .composer textarea:focus { border-color: var(--accent); }
+  .composer-row { display: flex; align-items: center; gap: 8px; margin-top: 8px; }
+
+  .stage { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+  .toolbar { display: flex; align-items: center; gap: 6px; padding: 8px 12px; background: var(--panel); border-bottom: 1px solid var(--border); flex-wrap: wrap; }
+  .tabs { display: flex; background: #f1effa; border-radius: 8px; padding: 3px; }
+  .tab { border: none; background: none; padding: 5px 12px; border-radius: 6px; font-size: .85rem; color: var(--muted); }
+  .tab.active { background: var(--panel); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+  .view { flex: 1; min-height: 0; position: relative; }
+  .preview-wrap { height: 100%; display: flex; justify-content: center; background: #ebe9f3; padding: 12px; overflow: auto; }
+  #frame { width: 100%; height: 100%; border: 0; background: #fff; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,.08); transition: width .2s; }
+  #frame.mobile { width: 390px; max-width: 100%; }
+  .placeholder { position: absolute; inset: 0; display: grid; place-items: center; color: var(--muted); text-align: center; padding: 24px; pointer-events: none; }
+  .code-view { height: 100%; overflow: auto; background: var(--code-bg); color: #e6e3f5; font: 12.5px/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; padding: 16px; white-space: pre; tab-size: 2; }
+  .code-view:focus { outline: none; }
+  .data-view { height: 100%; overflow: auto; padding: 16px; }
+  .data-view h3 { font-size: .95rem; margin: 6px 0 8px; display: flex; align-items: center; gap: 8px; }
+  .data-view table { width: 100%; border-collapse: collapse; background: var(--panel); font-size: .8rem; margin-bottom: 24px; border: 1px solid var(--border); }
+  .data-view th, .data-view td { border-bottom: 1px solid var(--border); padding: 6px 8px; text-align: left; vertical-align: top; max-width: 260px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .data-view th { background: #f6f5fb; font-weight: 600; }
+  .error-bar { display: flex; align-items: center; gap: 10px; background: #fef2f2; color: #991b1b; border-top: 1px solid #fecaca; padding: 8px 12px; font-size: .82rem; }
+  .error-bar span { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .mobile-switch { display: none; }
+
+  /* ── Modal ── */
+  .modal-bg { position: fixed; inset: 0; background: rgba(20, 16, 40, .45); display: grid; place-items: center; z-index: 50; padding: 16px; }
+  .modal { background: var(--panel); border-radius: 14px; padding: 24px; width: 100%; max-width: 460px; }
+  .modal h2 { font-size: 1.1rem; margin-bottom: 14px; }
+  .modal label { display: block; font-size: .82rem; font-weight: 600; margin: 12px 0 6px; }
+  .modal input, .modal select { width: 100%; border: 1px solid var(--border); border-radius: 8px; padding: 9px 10px; }
+  .modal .note { font-size: .76rem; color: var(--muted); margin-top: 6px; line-height: 1.5; }
+  .modal-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 20px; }
+  .status { font-size: .82rem; margin-top: 8px; }
+  .status.ok { color: var(--ok); } .status.err { color: var(--err); }
+
+  @media (max-width: 860px) {
+    #builder { grid-template-columns: 1fr; }
+    #builder.show-preview .chat, #builder:not(.show-preview) .stage { display: none; }
+    .mobile-switch { display: inline-block; }
+    .proj-title { max-width: 120px; }
+    .hide-sm { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo" onclick="goHome()"><div class="logo-mark">✦</div>AppForge</div>
+  <input class="proj-title hidden" id="projTitle" onchange="renameProject(this.value)">
+  <div class="spacer"></div>
+  <span class="hint hide-sm" id="modelLabel"></span>
+  <button class="btn" onclick="openSettings()">⚙️ 設定</button>
+</header>
+
+<!-- ── Home ── -->
+<main id="home">
+  <div class="hero">
+    <h1>アイデアを伝えるだけで<br><span class="grad">アプリが完成</span></h1>
+    <p>作りたいアプリを日本語で説明してください。AIがすぐに動くWebアプリを作ります。<br>データ保存もAI機能も、そのまま使えます。</p>
+    <div class="prompt-box">
+      <textarea id="homePrompt" placeholder="例：チームのタスクを管理できるカンバンボード。担当者と期限を設定でき、期限切れは赤く表示したい"></textarea>
+      <div class="prompt-actions">
+        <span class="hint">Ctrl / ⌘ + Enter で作成</span>
+        <div class="spacer"></div>
+        <button class="btn btn-primary" onclick="startFromHome()">✦ アプリを作る</button>
+      </div>
+    </div>
+    <div class="chips" id="templates"></div>
+  </div>
+  <section class="projects">
+    <h2>マイアプリ</h2>
+    <div class="grid" id="projectGrid"></div>
+  </section>
+</main>
+
+<!-- ── Builder ── -->
+<main id="builder" class="hidden">
+  <section class="chat">
+    <div class="msgs" id="msgs"></div>
+    <div class="composer">
+      <textarea id="chatInput" placeholder="変更したい内容を伝えてください（例：ダークモードを追加して）"></textarea>
+      <div class="composer-row">
+        <span class="hint">Ctrl / ⌘ + Enter で送信</span>
+        <div class="spacer"></div>
+        <button class="btn mobile-switch" onclick="toggleMobilePane()">プレビュー</button>
+        <button class="btn hidden" id="stopBtn" onclick="stopGeneration()">■ 停止</button>
+        <button class="btn btn-primary" id="sendBtn" onclick="sendChat()">送信</button>
+      </div>
+    </div>
+  </section>
+  <section class="stage">
+    <div class="toolbar">
+      <button class="btn mobile-switch" onclick="toggleMobilePane()">← チャット</button>
+      <div class="tabs">
+        <button class="tab active" data-tab="preview" onclick="setTab('preview')">プレビュー</button>
+        <button class="tab" data-tab="code" onclick="setTab('code')">コード</button>
+        <button class="tab" data-tab="data" onclick="setTab('data')">データ</button>
+      </div>
+      <button class="btn btn-ghost hide-sm" id="deviceBtn" onclick="toggleDevice()" title="表示サイズ切替">🖥️</button>
+      <button class="btn btn-ghost" onclick="reloadPreview()" title="再読み込み">⟳</button>
+      <div class="spacer"></div>
+      <button class="btn" id="undoBtn" onclick="undo()" title="1つ前のバージョンに戻す">↶ 元に戻す</button>
+      <button class="btn hide-sm" onclick="openInNewTab()">↗ 新しいタブ</button>
+      <button class="btn" onclick="downloadApp()">⬇ ダウンロード</button>
+    </div>
+    <div class="view" id="viewPreview">
+      <div class="preview-wrap"><iframe id="frame" sandbox="allow-scripts allow-forms allow-modals allow-popups"></iframe></div>
+      <div class="placeholder" id="placeholder">アプリを生成中です…<br>完成するとここに表示されます</div>
+    </div>
+    <div class="view hidden" id="viewCode"><div class="code-view" id="codeView"></div></div>
+    <div class="view hidden" id="viewData"><div class="data-view" id="dataView"></div></div>
+    <div class="error-bar hidden" id="errorBar">
+      ⚠️ <span id="errorText"></span>
+      <button class="btn" onclick="fixError()">AIで修正</button>
+      <button class="btn btn-ghost" onclick="hideError()">✕</button>
+    </div>
+  </section>
+</main>
+
+<!-- ── Settings ── -->
+<div class="modal-bg hidden" id="settings">
+  <div class="modal">
+    <h2>⚙️ 設定</h2>
+    <label for="apiKey">Anthropic API キー</label>
+    <input type="password" id="apiKey" placeholder="sk-ant-..." autocomplete="off">
+    <p class="note">キーはこのブラウザにのみ保存されます。<a href="https://console.anthropic.com" target="_blank">console.anthropic.com</a> で取得できます。</p>
+    <label for="modelSel">アプリ生成に使うモデル</label>
+    <select id="modelSel">
+      <option value="claude-opus-5-5">Claude Opus 5.5（高品質・推奨）</option>
+      <option value="claude-sonnet-5-5">Claude Sonnet 5.5（バランス）</option>
+      <option value="claude-haiku-5-5">Claude Haiku 5.5（高速・低コスト）</option>
+    </select>
+    <div class="status" id="keyStatus"></div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeSettings()">キャンセル</button>
+      <button class="btn btn-primary" onclick="saveSettings()">保存して接続確認</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── Storage ──────────────────────────────────────────────
+const KEY_STORAGE = 'anth_key';
+const MODEL_STORAGE = 'forge_model';
+const PROJECTS_STORAGE = 'forge_projects';
+const DATA_PREFIX = 'forge_data_';
+const MAX_VERSIONS = 15;
+
+const S = {
+  key: localStorage.getItem(KEY_STORAGE) || '',
+  model: localStorage.getItem(MODEL_STORAGE) || 'claude-opus-5-5',
+  projects: loadProjects(),
+  current: null,
+  ctl: null,
+  lastError: '',
+  tab: 'preview',
+};
+
+function loadProjects() {
+  try { return JSON.parse(localStorage.getItem(PROJECTS_STORAGE)) || []; } catch { return []; }
+}
+function saveProjects() {
+  // Drop old versions until it fits in localStorage.
+  for (;;) {
+    try { localStorage.setItem(PROJECTS_STORAGE, JSON.stringify(S.projects)); return; }
+    catch (e) {
+      const fat = S.projects.find(p => p.versions.length > 1);
+      if (!fat) { sysMsg('⚠️ 保存容量がいっぱいです。不要なアプリを削除してください。', 'err'); return; }
+      fat.versions.shift();
+    }
+  }
+}
+function loadData(id) {
+  try { return JSON.parse(localStorage.getItem(DATA_PREFIX + id)) || {}; } catch { return {}; }
+}
+function saveData(id, data) {
+  try { localStorage.setItem(DATA_PREFIX + id, JSON.stringify(data)); } catch {}
+}
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+// ── Templates ────────────────────────────────────────────
+const TEMPLATES = [
+  ['✅ タスク管理', 'チームで使えるタスク管理アプリ。カンバン形式（未着手・進行中・完了）でドラッグ&ドロップで移動でき、担当者と期限を設定できる。期限切れは赤く表示。'],
+  ['💰 家計簿', '収入と支出を記録する家計簿アプリ。カテゴリ別の円グラフと月別の推移グラフを表示し、今月の残り予算がわかる。'],
+  ['📇 顧客管理CRM', '小規模ビジネス向けの顧客管理アプリ。顧客の一覧・検索・詳細表示、商談ステータス管理、メモの履歴を残せる。'],
+  ['📅 予約受付', '美容院の予約受付アプリ。日付と時間枠を選んで予約でき、管理者画面で予約一覧を確認・キャンセルできる。'],
+  ['🤖 AIチャットボット', 'AIに質問できるチャットアプリ。会話履歴を保存し、過去の会話を一覧から開ける。'],
+  ['📝 提案文ジェネレーター', 'フリーランス向けの提案文作成アプリ。案件内容と自分のスキルを入力するとAIが提案文を生成し、生成履歴を保存できる。'],
+];
+
+// ── Views ────────────────────────────────────────────────
+function goHome() {
+  stopGeneration();
+  S.current = null;
+  document.getElementById('home').classList.remove('hidden');
+  document.getElementById('builder').classList.add('hidden');
+  document.getElementById('projTitle').classList.add('hidden');
+  renderHome();
+}
+
+function renderHome() {
+  document.getElementById('templates').innerHTML = TEMPLATES.map((t, i) =>
+    `<button class="chip" onclick="useTemplate(${i})">${t[0]}</button>`).join('');
+  const grid = document.getElementById('projectGrid');
+  if (!S.projects.length) { grid.innerHTML = '<p class="empty">まだアプリがありません。上のボックスから作ってみましょう。</p>'; return; }
+  grid.innerHTML = '';
+  [...S.projects].sort((a, b) => b.updated - a.updated).forEach(p => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.onclick = () => openProject(p.id);
+    card.innerHTML = `<div class="thumb"></div>
+      <div class="card-body"><div class="card-title">${esc(p.name)}</div>
+      <div class="card-meta">${new Date(p.updated).toLocaleString('ja-JP')} · v${p.versions.length}</div></div>
+      <button class="card-del" title="削除">削除</button>`;
+    card.querySelector('.card-del').onclick = e => { e.stopPropagation(); deleteProject(p.id); };
+    const code = latestCode(p);
+    if (code) {
+      const f = document.createElement('iframe');
+      f.setAttribute('sandbox', '');
+      f.setAttribute('loading', 'lazy');
+      f.srcdoc = code;
+      card.querySelector('.thumb').appendChild(f);
+    }
+    grid.appendChild(card);
+  });
+}
+
+function useTemplate(i) {
+  const ta = document.getElementById('homePrompt');
+  ta.value = TEMPLATES[i][1];
+  ta.focus();
+}
+
+function startFromHome() {
+  const text = document.getElementById('homePrompt').value.trim();
+  if (!text) return;
+  if (!S.key) { openSettings(); return; }
+  const p = { id: uid(), name: guessName(text), created: Date.now(), updated: Date.now(), versions: [], chat: [] };
+  S.projects.push(p);
+  saveProjects();
+  document.getElementById('homePrompt').value = '';
+  openProject(p.id);
+  generate(text);
+}
+
+function guessName(text) {
+  const t = text.split(/[。．\n、,]/)[0].trim();
+  return t.length > 24 ? t.slice(0, 24) + '…' : (t || '新しいアプリ');
+}
+
+function openProject(id) {
+  S.current = S.projects.find(p => p.id === id);
+  if (!S.current) return;
+  document.getElementById('home').classList.add('hidden');
+  document.getElementById('builder').classList.remove('hidden');
+  const title = document.getElementById('projTitle');
+  title.classList.remove('hidden');
+  title.value = S.current.name;
+  document.getElementById('msgs').innerHTML = '';
+  S.current.chat.forEach(m => addMsg(m.role, m.text, m.version));
+  hideError();
+  setTab('preview');
+  refreshCode();
+  reloadPreview();
+  updateUndo();
+}
+
+function renameProject(name) {
+  if (!S.current) return;
+  S.current.name = name.trim() || S.current.name;
+  saveProjects();
+}
+
+function deleteProject(id) {
+  const p = S.projects.find(x => x.id === id);
+  if (!p || !confirm(`「${p.name}」を削除しますか？保存されたデータも消えます。`)) return;
+  S.projects = S.projects.filter(x => x.id !== id);
+  localStorage.removeItem(DATA_PREFIX + id);
+  saveProjects();
+  renderHome();
+}
+
+const latestCode = p => p.versions.length ? p.versions[p.versions.length - 1].code : '';
+
+// ── Chat UI ──────────────────────────────────────────────
+function addMsg(role, text, version) {
+  const el = document.createElement('div');
+  el.className = 'msg ' + role;
+  el.textContent = text;
+  if (role === 'ai' && version != null) {
+    const b = document.createElement('button');
+    b.className = 'restore';
+    b.textContent = `v${version + 1} に戻す`;
+    b.onclick = () => restoreVersion(version);
+    el.appendChild(document.createElement('br'));
+    el.appendChild(b);
+  }
+  const box = document.getElementById('msgs');
+  box.appendChild(el);
+  box.scrollTop = box.scrollHeight;
+  return el;
+}
+function sysMsg(text, role = 'sys') { return addMsg(role, text); }
+
+function pushChat(role, text, version) {
+  S.current.chat.push({ role, text, version });
+  saveProjects();
+}
+
+function sendChat() {
+  const ta = document.getElementById('chatInput');
+  const text = ta.value.trim();
+  if (!text || S.ctl) return;
+  if (!S.key) { openSettings(); return; }
+  ta.value = '';
+  generate(text);
+}
+
+// ── Generation ───────────────────────────────────────────
+const SYSTEM_PROMPT = `あなたは「AppForge」のアプリ生成エンジンです。ユーザーの説明から、ブラウザで動く完成度の高いWebアプリを1つのHTMLファイルとして作ります。
+
+## 出力形式（厳守）
+1. まず日本語で1〜3文、何を作った／何を変更したかを簡潔に説明する。
+2. 続けて \`\`\`html コードブロックを1つだけ出力し、<!DOCTYPE html> から </html> までの完全なファイルを書く。差分や省略（「…以下同じ」など）は禁止。
+3. コードブロックの後には何も書かない。
+
+## 技術要件
+- 単一HTMLファイル。CSSとJSはインラインで書く。外部ライブラリは CDN（cdn.tailwindcss.com、cdn.jsdelivr.net/npm、unpkg.com、cdnjs.cloudflare.com）のみ、バージョンを固定して読み込む。
+- 日本語UI。モダンで美しく、スマホでも使えるレスポンシブなデザインにする。空の状態・読み込み中・エラーの表示も用意する。
+- localStorage / sessionStorage / IndexedDB / cookie は使えない（サンドボックス内で実行される）。データ保存には必ず下記の window.db を使う。
+- アプリ起動時に window.db からデータを読み込んで表示し、変更のたびに保存する。初回はわかりやすいサンプルデータを数件 db に入れてもよい（コレクションが空のときだけ）。
+
+## 組み込みAPI（読み込み不要。window にすでに存在する）
+すべて Promise を返す。
+- db.list(collection) → レコード配列（各レコードに id, created_at, updated_at が自動付与）
+- db.get(collection, id) → レコード または null
+- db.create(collection, data) → 作成されたレコード
+- db.update(collection, id, patch) → 更新後のレコード
+- db.remove(collection, id) → true
+- ai.ask(prompt) → AIの回答テキスト（文字列）。文章生成・要約・分類・チャットなどに使う。
+- ai.askJSON(prompt) → AIの回答をJSONとしてパースしたオブジェクト。プロンプトでJSONの形を指示すること。
+collection 名は英小文字のスネークケース（例: tasks, customers）。`;
+
+async function generate(userText, opts = {}) {
+  const p = S.current;
+  if (!p || S.ctl) return;
+  const prevCode = latestCode(p);
+
+  if (!opts.silent) { addMsg('user', userText); pushChat('user', userText); }
+  const aiEl = addMsg('ai', '');
+  aiEl.innerHTML = '<span class="typing"><i></i><i></i><i></i></span> 設計中…';
+  if (!prevCode) document.getElementById('placeholder').classList.remove('hidden');
+  hideError();
+  setBusy(true);
+
+  const history = p.chat.filter(m => m.role === 'user').slice(-8, -1).map(m => '- ' + m.text).join('\n');
+  let content = '';
+  if (prevCode) {
+    content += `現在のアプリのコード:\n\`\`\`html\n${prevCode}\n\`\`\`\n\n`;
+    if (history) content += `これまでの依頼:\n${history}\n\n`;
+    content += `次の変更を反映した完全なHTMLを出力してください。既存の機能・デザイン・データ構造（collection名やフィールド名）は、指示がない限り維持してください。\n\n依頼: ${userText}`;
+  } else {
+    content += `次のアプリを作ってください。\n\n${userText}`;
+  }
+
+  const body = {
+    model: S.model,
+    max_tokens: 64000,
+    stream: true,
+    system: SYSTEM_PROMPT,
+    messages: [{ role: 'user', content }],
+    output_config: { effort: 'medium' },
+  };
+  const hdrs = headers(S.key);
+  if (S.model !== 'claude-haiku-5-5') {
+    body.fallbacks = 'default';
+    hdrs['anthropic-beta'] = 'server-side-fallback-2026-07-01';
+  }
+
+  S.ctl = new AbortController();
+  let raw = '', stopReason = '', lastPaint = 0;
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST', headers: hdrs, body: JSON.stringify(body), signal: S.ctl.signal,
+    });
+    if (!r.ok) throw new Error(await apiError(r));
+
+    const reader = r.body.getReader();
+    const dec = new TextDecoder();
+    let buf = '';
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      let i;
+      while ((i = buf.indexOf('\n\n')) >= 0) {
+        const chunk = buf.slice(0, i); buf = buf.slice(i + 2);
+        const line = chunk.split('\n').find(l => l.startsWith('data:'));
+        if (!line) continue;
+        let ev; try { ev = JSON.parse(line.slice(5)); } catch { continue; }
+        if (ev.type === 'content_block_delta' && ev.delta.type === 'text_delta') raw += ev.delta.text;
+        else if (ev.type === 'message_delta' && ev.delta.stop_reason) stopReason = ev.delta.stop_reason;
+        else if (ev.type === 'error') throw new Error(ev.error?.message || 'ストリームエラー');
+      }
+      const now = Date.now();
+      if (now - lastPaint > 120) { lastPaint = now; paintStream(aiEl, raw); }
+    }
+    paintStream(aiEl, raw);
+
+    if (stopReason === 'refusal') throw new Error('この依頼はAIの安全上の判断により生成できませんでした。内容を変えて試してください。');
+    const { text, code, closed } = splitOutput(raw);
+    if (!code || !/<\/html>/i.test(code) || (!closed && stopReason === 'max_tokens')) {
+      throw new Error(stopReason === 'max_tokens'
+        ? '出力が長すぎて途中で切れました。機能を絞って依頼してください。'
+        : 'AIの応答からHTMLを取り出せませんでした。もう一度お試しください。');
+    }
+    p.versions.push({ code, at: Date.now(), prompt: userText });
+    if (p.versions.length > MAX_VERSIONS) p.versions.shift();
+    p.updated = Date.now();
+    const v = p.versions.length - 1;
+    const summary = text || '✅ 更新しました。';
+    aiEl.remove();
+    addMsg('ai', summary, v);
+    pushChat('ai', summary, v);
+    refreshCode();
+    reloadPreview();
+    updateUndo();
+  } catch (e) {
+    aiEl.remove();
+    if (e.name === 'AbortError') sysMsg('生成を停止しました。');
+    else { sysMsg('❌ ' + e.message, 'err'); }
+    if (!prevCode) document.getElementById('placeholder').textContent = 'アプリはまだありません。左のチャットから依頼してください。';
+    refreshCode();
+  } finally {
+    S.ctl = null;
+    setBusy(false);
+  }
+}
+
+function splitOutput(raw) {
+  const start = raw.search(/```html\s*\n/i);
+  if (start < 0) return { text: raw.trim(), code: '', closed: false };
+  const text = raw.slice(0, start).trim();
+  const codeStart = raw.indexOf('\n', start) + 1;
+  const end = raw.indexOf('\n```', codeStart);
+  const closed = end >= 0;
+  return { text, code: raw.slice(codeStart, closed ? end : undefined).trim(), closed };
+}
+
+function paintStream(aiEl, raw) {
+  const { text, code } = splitOutput(raw);
+  if (!raw) return;
+  const lines = code ? code.split('\n').length : 0;
+  aiEl.textContent = (text || '') + (code ? `\n\n⚙️ コードを書いています… ${lines} 行` : '');
+  if (code) {
+    const cv = document.getElementById('codeView');
+    cv.textContent = code;
+    if (S.tab === 'code') cv.scrollTop = cv.scrollHeight;
+  }
+  const box = document.getElementById('msgs');
+  box.scrollTop = box.scrollHeight;
+}
+
+async function apiError(r) {
+  let msg = `HTTP ${r.status}`;
+  try { const j = await r.json(); msg = j.error?.message || msg; } catch {}
+  if (r.status === 401) msg = 'APIキーが無効です。設定を確認してください。';
+  if (r.status === 429) msg = 'リクエストが多すぎます。少し待ってから再試行してください。';
+  if (r.status === 529) msg = 'APIが混雑しています。少し待ってから再試行してください。';
+  return msg;
+}
+
+function stopGeneration() { if (S.ctl) S.ctl.abort(); }
+
+function setBusy(b) {
+  document.getElementById('sendBtn').disabled = b;
+  document.getElementById('stopBtn').classList.toggle('hidden', !b);
+  document.getElementById('undoBtn').disabled = b || !(S.current && S.current.versions.length > 1);
+}
+
+function headers(key) {
+  return {
+    'Content-Type': 'application/json',
+    'x-api-key': key,
+    'anthropic-version': '2023-06-01',
+    'anthropic-dangerous-direct-browser-access': 'true',
+  };
+}
+
+// ── Versions ─────────────────────────────────────────────
+function updateUndo() {
+  document.getElementById('undoBtn').disabled = !!S.ctl || !(S.current && S.current.versions.length > 1);
+}
+function undo() {
+  const p = S.current;
+  if (!p || p.versions.length < 2) return;
+  p.versions.pop();
+  p.updated = Date.now();
+  saveProjects();
+  sysMsg(`↶ v${p.versions.length} に戻しました`);
+  refreshCode(); reloadPreview(); updateUndo();
+}
+function restoreVersion(v) {
+  const p = S.current;
+  const ver = p.versions[v];
+  if (!ver) { sysMsg('このバージョンは古いため削除されています。'); return; }
+  if (v === p.versions.length - 1) { sysMsg('これが最新バージョンです。'); return; }
+  p.versions.push({ code: ver.code, at: Date.now(), prompt: `v${v + 1} を復元` });
+  if (p.versions.length > MAX_VERSIONS) p.versions.shift();
+  p.updated = Date.now();
+  saveProjects();
+  sysMsg(`v${v + 1} を復元しました`);
+  refreshCode(); reloadPreview(); updateUndo();
+}
+
+// ── Preview & runtime bridge ─────────────────────────────
+// SDK injected into generated apps. In preview it talks to this page via postMessage;
+// in downloaded files it falls back to localStorage.
+const SDK_SRC = `(function(){
+  var standalone = window.parent === window;
+  var pending = {}, seq = 0;
+  function call(op, args) {
+    if (standalone) return Promise.resolve(local(op, args));
+    return new Promise(function(res, rej){
+      var id = ++seq; pending[id] = {res: res, rej: rej};
+      parent.postMessage({__forge: 1, id: id, op: op, args: args}, '*');
+    });
+  }
+  window.addEventListener('message', function(e){
+    var m = e.data; if (!m || !m.__forgeReply || !pending[m.id]) return;
+    var p = pending[m.id]; delete pending[m.id];
+    m.error ? p.rej(new Error(m.error)) : p.res(m.result);
+  });
+  function store(){ try { return JSON.parse(localStorage.getItem('appforge_db') || '{}'); } catch(e){ return {}; } }
+  function local(op, a){
+    var d = store(), c = a[0], list = d[c] || [], now = new Date().toISOString(), r = null;
+    if (op === 'list') return list;
+    if (op === 'get') return list.find(function(x){ return x.id === a[1]; }) || null;
+    if (op === 'create') { r = Object.assign({}, a[1], {id: Date.now().toString(36) + Math.random().toString(36).slice(2,7), created_at: now, updated_at: now}); list.push(r); }
+    if (op === 'update') { list = list.map(function(x){ if (x.id !== a[1]) return x; r = Object.assign({}, x, a[2], {id: x.id, updated_at: now}); return r; }); }
+    if (op === 'remove') { list = list.filter(function(x){ return x.id !== a[1]; }); r = true; }
+    if (op.indexOf('ai.') === 0) throw new Error('AI機能はAppForgeのプレビュー内でのみ利用できます');
+    d[c] = list; localStorage.setItem('appforge_db', JSON.stringify(d)); return r;
+  }
+  window.db = {
+    list: function(c){ return call('list', [c]); },
+    get: function(c, id){ return call('get', [c, id]); },
+    create: function(c, data){ return call('create', [c, data]); },
+    update: function(c, id, patch){ return call('update', [c, id, patch]); },
+    remove: function(c, id){ return call('remove', [c, id]); }
+  };
+  window.ai = {
+    ask: function(prompt){ return call('ai.ask', [prompt]); },
+    askJSON: function(prompt){ return call('ai.ask', [prompt + '\\n\\nJSONのみを出力してください。説明やコードブロック記号は不要です。']).then(function(t){
+      var s = t.indexOf('{'), a = t.indexOf('['), i = (s < 0) ? a : (a < 0 ? s : Math.min(s, a));
+      return JSON.parse((i >= 0 ? t.slice(i) : t).replace(/\`\`\`\\s*$/, ''));
+    }); }
+  };
+  if (!standalone) {
+    window.addEventListener('error', function(e){ parent.postMessage({__forgeError: 1, message: e.message + (e.lineno ? ' (line ' + e.lineno + ')' : '')}, '*'); });
+    window.addEventListener('unhandledrejection', function(e){ parent.postMessage({__forgeError: 1, message: 'Unhandled: ' + (e.reason && e.reason.message || e.reason)}, '*'); });
+  }
+})();`;
+
+function withSdk(code) {
+  const tag = `<script>${SDK_SRC}<\/script>`;
+  const m = code.match(/<head[^>]*>/i);
+  return m ? code.replace(m[0], m[0] + tag) : tag + code;
+}
+
+function reloadPreview() {
+  const p = S.current;
+  const frame = document.getElementById('frame');
+  const ph = document.getElementById('placeholder');
+  const code = p && latestCode(p);
+  if (!code) { frame.srcdoc = ''; ph.classList.remove('hidden'); return; }
+  ph.classList.add('hidden');
+  hideError();
+  frame.srcdoc = withSdk(code);
+}
+
+function refreshCode() {
+  document.getElementById('codeView').textContent = (S.current && latestCode(S.current)) || '// まだコードがありません';
+  if (S.tab === 'data') renderData();
+}
+
+window.addEventListener('message', async e => {
+  const frame = document.getElementById('frame');
+  if (!S.current || e.source !== frame.contentWindow) return;
+  const m = e.data || {};
+  if (m.__forgeError) { showError(m.message); return; }
+  if (!m.__forge) return;
+  const reply = (result, error) => frame.contentWindow.postMessage({ __forgeReply: 1, id: m.id, result, error }, '*');
+  try { reply(await runtimeOp(S.current.id, m.op, m.args || [])); }
+  catch (err) { reply(null, err.message || String(err)); }
+});
+
+async function runtimeOp(pid, op, a) {
+  if (op === 'ai.ask') return askAI(String(a[0] ?? ''));
+  const data = loadData(pid);
+  const c = String(a[0] || 'default');
+  let list = data[c] || [];
+  const now = new Date().toISOString();
+  let result = null;
+  switch (op) {
+    case 'list': return list;
+    case 'get': return list.find(x => x.id === a[1]) || null;
+    case 'create': result = { ...(a[1] || {}), id: uid(), created_at: now, updated_at: now }; list.push(result); break;
+    case 'update':
+      list = list.map(x => x.id === a[1] ? (result = { ...x, ...(a[2] || {}), id: x.id, updated_at: now }) : x);
+      if (!result) throw new Error('レコードが見つかりません: ' + a[1]);
+      break;
+    case 'remove': list = list.filter(x => x.id !== a[1]); result = true; break;
+    default: throw new Error('不明な操作: ' + op);
+  }
+  data[c] = list;
+  saveData(pid, data);
+  if (S.tab === 'data') renderData();
+  return result;
+}
+
+async function askAI(prompt) {
+  if (!S.key) throw new Error('APIキーが設定されていません');
+  const r = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST', headers: headers(S.key),
+    body: JSON.stringify({
+      model: 'claude-haiku-5-5', max_tokens: 8000,
+      output_config: { effort: 'low' },
+      messages: [{ role: 'user', content: prompt }],
+    }),
+  });
+  if (!r.ok) throw new Error(await apiError(r));
+  const j = await r.json();
+  if (j.stop_reason === 'refusal') throw new Error('AIがこの依頼への回答を控えました');
+  return j.content.filter(b => b.type === 'text').map(b => b.text).join('');
+}
+
+// ── Errors ───────────────────────────────────────────────
+function showError(msg) {
+  S.lastError = msg;
+  document.getElementById('errorText').textContent = msg;
+  document.getElementById('errorBar').classList.remove('hidden');
+}
+function hideError() {
+  S.lastError = '';
+  document.getElementById('errorBar').classList.add('hidden');
+}
+function fixError() {
+  const msg = S.lastError;
+  if (!msg || S.ctl) return;
+  generate(`プレビューで次のエラーが発生しました。原因を特定して修正してください。\n${msg}`);
+}
+
+// ── Tabs / toolbar ───────────────────────────────────────
+function setTab(t) {
+  S.tab = t;
+  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.tab === t));
+  document.getElementById('viewPreview').classList.toggle('hidden', t !== 'preview');
+  document.getElementById('viewCode').classList.toggle('hidden', t !== 'code');
+  document.getElementById('viewData').classList.toggle('hidden', t !== 'data');
+  if (t === 'data') renderData();
+}
+
+function renderData() {
+  const box = document.getElementById('dataView');
+  if (!S.current) return;
+  const data = loadData(S.current.id);
+  const names = Object.keys(data);
+  if (!names.length) { box.innerHTML = '<p class="empty">まだデータがありません。アプリでデータを追加するとここに表示されます。</p>'; return; }
+  box.innerHTML = names.map(name => {
+    const rows = data[name];
+    const cols = [...new Set(rows.flatMap(r => Object.keys(r)))].filter(k => !['created_at', 'updated_at'].includes(k));
+    const cell = v => esc(typeof v === 'object' && v !== null ? JSON.stringify(v) : v ?? '');
+    return `<h3>📁 ${esc(name)} <span class="hint">${rows.length} 件</span>
+        <button class="btn btn-ghost" data-name="${esc(name)}" onclick="clearCollection(this.dataset.name)">全削除</button></h3>
+      <table><thead><tr>${cols.map(c => `<th>${esc(c)}</th>`).join('')}</tr></thead>
+      <tbody>${rows.map(r => `<tr>${cols.map(c => `<td title="${cell(r[c])}">${cell(r[c])}</td>`).join('')}</tr>`).join('')}</tbody></table>`;
+  }).join('');
+}
+
+function clearCollection(name) {
+  if (!confirm(`「${name}」のデータをすべて削除しますか？`)) return;
+  const data = loadData(S.current.id);
+  delete data[name];
+  saveData(S.current.id, data);
+  renderData();
+  reloadPreview();
+}
+
+function toggleDevice() {
+  const f = document.getElementById('frame');
+  f.classList.toggle('mobile');
+  document.getElementById('deviceBtn').textContent = f.classList.contains('mobile') ? '📱' : '🖥️';
+}
+
+function toggleMobilePane() {
+  document.getElementById('builder').classList.toggle('show-preview');
+}
+
+function exportHtml() {
+  return withSdk(latestCode(S.current));
+}
+
+function downloadApp() {
+  if (!S.current || !latestCode(S.current)) return;
+  const blob = new Blob([exportHtml()], { type: 'text/html' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (S.current.name.replace(/[\\/:*?"<>|…]/g, '').trim() || 'app') + '.html';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+function openInNewTab() {
+  if (!S.current || !latestCode(S.current)) return;
+  const url = URL.createObjectURL(new Blob([exportHtml()], { type: 'text/html' }));
+  window.open(url, '_blank');
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
+}
+
+// ── Settings ─────────────────────────────────────────────
+function openSettings() {
+  document.getElementById('apiKey').value = S.key;
+  document.getElementById('modelSel').value = S.model;
+  document.getElementById('keyStatus').textContent = '';
+  document.getElementById('settings').classList.remove('hidden');
+}
+function closeSettings() { document.getElementById('settings').classList.add('hidden'); }
+
+async function saveSettings() {
+  const key = document.getElementById('apiKey').value.trim();
+  const model = document.getElementById('modelSel').value;
+  const st = document.getElementById('keyStatus');
+  if (!key.startsWith('sk-ant-')) { st.className = 'status err'; st.textContent = '❌ APIキーは sk-ant- で始まる形式です'; return; }
+  st.className = 'status'; st.textContent = '接続確認中…';
+  try {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST', headers: headers(key),
+      body: JSON.stringify({ model: 'claude-haiku-5-5', max_tokens: 16, messages: [{ role: 'user', content: 'hi' }] }),
+    });
+    if (!r.ok) throw new Error(await apiError(r));
+    S.key = key; S.model = model;
+    localStorage.setItem(KEY_STORAGE, key);
+    localStorage.setItem(MODEL_STORAGE, model);
+    updateModelLabel();
+    st.className = 'status ok'; st.textContent = '✅ 接続成功！保存しました';
+    setTimeout(closeSettings, 700);
+  } catch (e) {
+    st.className = 'status err'; st.textContent = '❌ ' + e.message;
+  }
+}
+
+function updateModelLabel() {
+  const names = { 'claude-opus-5-5': 'Opus 5.5', 'claude-sonnet-5-5': 'Sonnet 5.5', 'claude-haiku-5-5': 'Haiku 5.5' };
+  document.getElementById('modelLabel').textContent = S.key ? `モデル: ${names[S.model] || S.model}` : 'APIキー未設定';
+}
+
+// ── Init ─────────────────────────────────────────────────
+const ctrlEnter = fn => e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); fn(); } };
+document.getElementById('homePrompt').addEventListener('keydown', ctrlEnter(startFromHome));
+document.getElementById('chatInput').addEventListener('keydown', ctrlEnter(sendChat));
+document.getElementById('settings').addEventListener('click', e => { if (e.target.id === 'settings') closeSettings(); });
+updateModelLabel();
+renderHome();
+if (!S.key) openSettings();
+</script>
+</body>
+</html>
