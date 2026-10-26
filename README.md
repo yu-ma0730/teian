@@ -1,35 +1,91 @@
-<!DOCTYPE html>
-<html lang="ja">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>提案文ツール集</title>
-<style>
-  body { font-family: 'Hiragino Kaku Gothic Pro', Meiryo, sans-serif; background: #f5f7fa; color: #333; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-  .menu { background: #fff; border-radius: 16px; padding: 40px; box-shadow: 0 2px 12px rgba(0,0,0,.1); text-align: center; max-width: 420px; width: 90%; }
-  h1 { font-size: 1.6rem; color: #374151; margin-bottom: 8px; }
-  p { color: #666; font-size: 0.9rem; margin-bottom: 28px; }
-  a.tool-btn { display: block; padding: 16px 20px; border-radius: 10px; color: #fff; text-decoration: none; font-size: 1rem; margin-bottom: 12px; transition: background .2s; text-align: left; }
-  a.tool-btn .btn-title { font-weight: bold; font-size: 1rem; }
-  a.tool-btn .btn-sub { font-size: 0.78rem; opacity: 0.85; margin-top: 2px; }
-  .crowdworks { background: #1a56db; }
-  .crowdworks:hover { background: #1648c0; }
-  .upwork { background: #14a800; }
-  .upwork:hover { background: #108a00; }
-</style>
-</head>
-<body>
-<div class="menu">
-  <h1>🛠️ 提案文ツール集</h1>
-  <p>フリーランス向けAI提案文作成ツール</p>
-  <a class="tool-btn crowdworks" href="proposal.html">
-    <div class="btn-title">📝 提案文作成ツール</div>
-    <div class="btn-sub">CrowdWorks・日本語案件向け</div>
-  </a>
-  <a class="tool-btn upwork" href="upwork.html">
-    <div class="btn-title">🌐 Upwork Proposal Generator</div>
-    <div class="btn-sub">Upwork・海外案件向け（English）</div>
-  </a>
-</div>
-</body>
-</html>
+# teian — フリーランス向け AI ツール集
+
+フリーランス活動（案件への応募・ちょっとしたアプリ作り）を AI で楽にするための、ブラウザだけで動くツール集です。
+どのツールも **HTML ファイル 1 枚で完結** しており、サーバーやインストールは不要です。
+
+> 「teian」= 提案。もともと提案文作成ツールから始まったリポジトリです。
+
+---
+
+## ツール一覧（どれを使えばいい？）
+
+| やりたいこと | 使うツール | ファイル |
+| --- | --- | --- |
+| ツールを選ぶ入口ページを開きたい | 🛠️ 提案文ツール集（メニュー） | [`docs/index.html`](docs/index.html) |
+| **CrowdWorks など日本語の案件**に応募する提案文を作りたい | 📝 提案文作成ツール | [`docs/proposal.html`](docs/proposal.html) |
+| **Upwork など海外（英語）の案件**に応募する提案文を作りたい | 🌐 Upwork Proposal Generator | [`docs/upwork.html`](docs/upwork.html) |
+| 言葉で説明するだけで**小さな Web アプリを作りたい** | ⚒️ AppForge（AI アプリビルダー） | [`docs/builder.html`](docs/builder.html) |
+
+---
+
+## 各ツールの説明
+
+### 🛠️ 提案文ツール集 — `docs/index.html`
+
+- **何のため？** 提案文ツール 2 つへのリンクを並べただけのメニューページです。
+- 「CrowdWorks 向け（日本語）」と「Upwork 向け（English）」のボタンがあります。
+- ※ AppForge（`builder.html`）へのリンクはまだありません。直接 `builder.html` を開いてください。
+
+### 📝 提案文作成ツール（CrowdWorks 向け） — `docs/proposal.html`
+
+- **何のため？** CrowdWorks などの日本語案件に送る **提案文を AI が 3 パターン作る** ツール。
+- **使い方**
+  1. **Step 1 — API キー設定**：Anthropic の API キー（`sk-ant-...`）を入れて「接続テスト」。
+  2. **Step 2 — 案件情報**：案件タイトル・内容・報酬を入力。
+     案件ページの **スクリーンショットを貼れば AI が内容を読み取って** 自動入力できます。
+     「自分の稼働条件・補足」（例：週10時間対応可能 など）は次回以降も保存されます。
+  3. **Step 3 — 生成結果**：200〜400 文字の提案文が 3 パターン出ます。
+     気に入ったものを選んで「カスタム指示」（例：もっと丁寧に）を書けば **ブラッシュアップ** できます。
+
+### 🌐 Upwork Proposal Generator — `docs/upwork.html`
+
+- **何のため？** 上の提案文作成ツールの **英語版・Upwork 向け**。海外案件に送る英文プロポーザルを 3 パターン作ります。
+- 使い方は日本語版とほぼ同じ（Step 1 → 2 → 3）。画面はすべて英語です。
+- 日本語版との違い
+  - 入力欄に **Required Skills（求められるスキル）** と **Your Profile & Availability（自分のプロフィール・稼働状況）** がある
+  - 生成される文章は 1 本あたり 150〜300 words、「I am writing to apply」のような定型の書き出しを避ける設定
+
+### ⚒️ AppForge（AI アプリビルダー） — `docs/builder.html`
+
+- **何のため？** 「こんなアプリがほしい」とチャットで伝えるだけで、**AI が Web アプリを作ってくれる** ツール（Base44 のようなもの）。
+  提案文ツールとは別物の、アプリ作成用ツールです。
+- **できること**
+  - チャットで依頼 → 右側に **完成したアプリのプレビュー** が表示される。続けて「ボタンを青くして」など修正依頼もできる
+  - テンプレートから開始：タスク管理 / 家計簿 / 顧客管理 CRM / 予約受付 / AI チャットボット / 提案文ジェネレーター
+  - 作ったアプリにはデータ保存機能（`window.db`）と AI 機能（`window.ai`）が組み込まれる
+  - 「プレビュー / コード / データ」タブで中身を確認できる
+  - **元に戻す**（1 つ前のバージョンへ）、**新しいタブで開く**、**HTML としてダウンロード**
+  - エラーが出たら「AI で修正」ボタンで自動修正
+  - 作ったアプリは「マイアプリ」一覧に保存される
+- **設定（⚙️）**：API キーと、生成に使うモデル（Opus = 高品質 / Sonnet = バランス / Haiku = 高速・低コスト）を選べます。
+- ※ ダウンロードしたアプリ単体では AI 機能（`window.ai`）は使えません（データ保存はブラウザ内で動きます）。
+
+---
+
+## 共通の注意点
+
+- **Anthropic の API キーが必要です。** [console.anthropic.com](https://console.anthropic.com) で取得できます。
+  API の利用料金は自分のアカウントに請求されます。
+- API キーや入力内容は **使っているブラウザの中（localStorage）にだけ保存** されます。
+  他人と共用のパソコンで使ったあとは、各ツールの「削除」ボタンでキーを消してください。
+- ブラウザのデータを消すと、保存したキー・設定・AppForge で作ったアプリも消えます。
+
+---
+
+## 使い方（開き方）
+
+- **手元で使う**：`docs/` の中の HTML ファイルをダウンロードしてブラウザで開くだけで動きます。
+- **Web で公開する**：GitHub Pages で `docs/` フォルダを公開すると、
+  `https://yu-ma0730.github.io/teian/` でメニュー（`index.html`）が開けます。
+
+## フォルダ構成
+
+```
+teian/
+├── README.md          … この説明書
+└── docs/
+    ├── index.html     … 入口メニュー（提案文ツール 2 つへのリンク）
+    ├── proposal.html  … 提案文作成ツール（CrowdWorks・日本語）
+    ├── upwork.html    … Upwork Proposal Generator（英語）
+    └── builder.html   … AppForge（AI アプリビルダー）
+```
